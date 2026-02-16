@@ -71,6 +71,7 @@ internal fun CalibrationApp(
     onDismissPairDialog: () -> Unit,
     onRefreshBridge: () -> Unit,
     onReconnectRootDaemon: () -> Unit,
+    onStopRootDaemon: () -> Unit,
     onPairAndAuthorize: () -> Unit,
     onRefreshAlsps: () -> Unit,
     onAlspsCalibrate: () -> Unit,
@@ -141,7 +142,7 @@ internal fun CalibrationApp(
             when (selectedTab.value) {
                 CalibrationTab.Authorization -> ScreenColumn {
                     AuthorizationScreen(
-                        bridgeState = bridgeState.value,
+                        daemonState = bridgeState.value,
                         adbAuthorizationState = adbAuthorizationState.value,
                         notificationPermissionState = notificationPermissionState.value,
                         manualDaemonCommands = manualDaemonCommands.value,
@@ -153,6 +154,7 @@ internal fun CalibrationApp(
                         onStartAuthorizationFlow = onStartAuthorizationFlow,
                         onRequestNotificationPermission = onRequestNotificationPermission,
                         onReconnectRootDaemon = onReconnectRootDaemon,
+                        onStopRootDaemon = onStopRootDaemon,
                         onRefreshBridge = onRefreshBridge
                     )
                 }
@@ -232,7 +234,7 @@ internal fun CalibrationApp(
 
 @Composable
 private fun AuthorizationScreen(
-    bridgeState: String,
+    daemonState: String,
     adbAuthorizationState: String,
     notificationPermissionState: String,
     manualDaemonCommands: List<String>,
@@ -244,6 +246,7 @@ private fun AuthorizationScreen(
     onStartAuthorizationFlow: () -> Unit,
     onRequestNotificationPermission: () -> Unit,
     onReconnectRootDaemon: () -> Unit,
+    onStopRootDaemon: () -> Unit,
     onRefreshBridge: () -> Unit
 ) {
     val busy = isScanningPairPort || isAuthorizingAdb || isRestartingDaemon
@@ -265,8 +268,8 @@ private fun AuthorizationScreen(
         }
     )
     StatusCard("通知权限", notificationPermissionState)
-    StatusCard("ADB / root 状态", adbAuthorizationState)
-    StatusCard("root daemon 状态", bridgeState)
+    StatusCard("ADB 状态", adbAuthorizationState)
+    StatusCard("root daemon 状态", daemonState)
     StatusCard(
         "已发现的配对端口",
         pairingEndpoint?.let { "${it.host}:${it.port}" }
@@ -285,10 +288,16 @@ private fun AuthorizationScreen(
         onClick = onStartAuthorizationFlow
     )
     FullWidthBusyButton(
-        label = "重连 adb 并启动 root 服务",
+        label = "重连 adb 并启动 root daemon",
         enabled = !busy,
         busy = isRestartingDaemon,
         onClick = onReconnectRootDaemon
+    )
+    FullWidthBusyButton(
+        label = "停止 root daemon",
+        enabled = !busy,
+        busy = false,
+        onClick = onStopRootDaemon
     )
     FullWidthBusyButton(
         label = "刷新 root daemon 状态",
@@ -433,7 +442,7 @@ private fun CalibrationPreview() {
         CalibrationApp(
             selectedTab = remember { mutableStateOf(CalibrationTab.Authorization) },
             bridgeState = remember { mutableStateOf("root daemon 已连接，vendor HAL 可访问") },
-            adbAuthorizationState = remember { mutableStateOf("无线 ADB 已授权，root daemon 启动成功") },
+            adbAuthorizationState = remember { mutableStateOf("无线 ADB 已授权") },
             notificationPermissionState = remember { mutableStateOf("已授权") },
             manualDaemonCommands = remember {
                 mutableStateOf(
@@ -489,6 +498,7 @@ private fun CalibrationPreview() {
             onDismissPairDialog = {},
             onRefreshBridge = {},
             onReconnectRootDaemon = {},
+            onStopRootDaemon = {},
             onPairAndAuthorize = {},
             onRefreshAlsps = {},
             onAlspsCalibrate = {},

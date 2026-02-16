@@ -35,6 +35,8 @@ class RootCalibrationProxy(private val context: Context) {
 
     fun probe(): CommandResult = runHelper("probe")
 
+    fun stopDaemon(): CommandResult = runHelper("exit")
+
     fun calibrateGSensor(): CommandResult = runHelper("calibrate-gsensor")
 
     fun calibrateGyroscope(): CommandResult = runHelper("calibrate-gyroscope")

@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -18,7 +17,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.ContextCompat
 import com.agui.calibration.adb.WirelessAdbManager
 import com.agui.calibration.root.RootDaemonScriptInstaller
 import com.agui.calibration.root.RootCalibrationProxy
@@ -49,7 +47,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private val selectedTab = mutableStateOf(CalibrationTab.Authorization)
     private val accelValues = mutableStateOf(FloatArray(3))
     private val gyroValues = mutableStateOf(FloatArray(3))
-    private val bridgeState = mutableStateOf("未连接")
+    private val daemonState = mutableStateOf("未连接")
     private val adbAuthorizationState = mutableStateOf("请先在开发者选项中开启无线调试，然后完成配对")
     private val notificationPermissionState = mutableStateOf("未检查")
     private val manualDaemonCommands = mutableStateOf(listOf<String>())
@@ -148,7 +146,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             AguiCalibrationTheme {
                 CalibrationApp(
                     selectedTab = selectedTab,
-                    bridgeState = bridgeState,
+                    bridgeState = daemonState,
                     adbAuthorizationState = adbAuthorizationState,
                     notificationPermissionState = notificationPermissionState,
                     manualDaemonCommands = manualDaemonCommands,
@@ -180,6 +178,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                     onRequestNotificationPermission = { requestNotificationPermission() },
                     onRefreshBridge = { refreshBridgeState(initial = false) },
                     onReconnectRootDaemon = { reconnectRootDaemon() },
+                    onStopRootDaemon = { stopRootDaemon() },
                     onPairAndAuthorize = { startWirelessAuthorization() },
                     onRefreshAlsps = { refreshAlspsStatus(false) },
                     onAlspsCalibrate = { onAlspsCalibrationRequested() },
@@ -388,7 +387,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             val result = rootProxy.probe()
             mainHandler.post {
                 val available = result.exitCode == 0 && result.stdout.contains("OK service_found")
-                bridgeState.value = if (available) {
+                daemonState.value = if (available) {
                     "root daemon 已连接，vendor HAL 可访问"
                 } else {
                     "root daemon 不可用或 vendor HAL 不可访问"
@@ -428,6 +427,22 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                         appendLog(result.combined)
                     }
                 }
+            }
+        }.start()
+    }
+
+    private fun stopRootDaemon() {
+        Thread {
+            val result = rootProxy.stopDaemon()
+            mainHandler.post {
+                appendLog("stop-daemon exit=${result.exitCode}")
+                if (result.combined.isNotBlank()) appendLog(result.combined)
+                daemonState.value = if (result.exitCode == 0) {
+                    "root daemon 已停止"
+                } else {
+                    "停止 root daemon 失败：${result.combined}"
+                }
+                refreshBridgeState(initial = false)
             }
         }.start()
     }
