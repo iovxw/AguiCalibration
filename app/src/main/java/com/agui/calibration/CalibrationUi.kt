@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -17,19 +17,43 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import java.util.Locale
 
 internal val CommonPadding: Dp = 16.dp
 internal val CommonSpacing: Dp = 12.dp
 internal val CommonItemSpacing: Dp = 6.dp
+
+@Composable
+private fun ButtonBusyIndicator() {
+    val textStyle = LocalTextStyle.current
+    val textUnit = when {
+        textStyle.lineHeight.isSpecified -> textStyle.lineHeight
+        textStyle.fontSize.isSpecified -> textStyle.fontSize
+        else -> androidx.compose.ui.unit.TextUnit.Unspecified
+    }
+    val indicatorSize = with(LocalDensity.current) {
+        if (textUnit.isSpecified) {
+            textUnit.toDp()
+        } else {
+            18.dp
+        }
+    }
+    CircularProgressIndicator(
+        modifier = Modifier.size(indicatorSize),
+        strokeWidth = 2.dp
+    )
+}
 
 @Composable
 internal fun CalibrationApp(
@@ -123,7 +147,7 @@ internal fun ActionRow(
     Row(horizontalArrangement = Arrangement.spacedBy(CommonSpacing)) {
         Button(onClick = onPrimary, enabled = primaryEnabled) {
             if (primaryBusy) {
-                CircularProgressIndicator(modifier = Modifier.height(18.dp), strokeWidth = 2.dp)
+                ButtonBusyIndicator()
             } else {
                 Text(primaryLabel)
             }
@@ -144,7 +168,7 @@ internal fun FullWidthBusyButton(
         modifier = Modifier.fillMaxWidth()
     ) {
         if (busy) {
-            CircularProgressIndicator(modifier = Modifier.height(18.dp), strokeWidth = 2.dp)
+            ButtonBusyIndicator()
         } else {
             Text(label)
         }
