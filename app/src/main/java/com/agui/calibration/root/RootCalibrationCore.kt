@@ -247,15 +247,17 @@ object RootCalibrationCore {
     }
 
     private fun readAlspsStandard(): AlspsStandard {
-        val raw = readSystemProperty("ro.alsps_stdvalue", "800,2000,800,80,1000")
+        // minStd, maxStd, offsetStd, thresholdGain, thresholdMin
+        // default: 800,2000,800,80,1000
+        val raw = readSystemProperty("ro.alsps_stdvalue", "")
         val parts = raw.split(',', '-').mapNotNull { it.trim().toIntOrNull() }
         return AlspsStandard(
             raw = raw,
-            minStd = parts.getOrElse(0) { 800 },
-            maxStd = parts.getOrElse(1) { 2000 },
-            offsetStd = parts.getOrElse(2) { 800 },
-            thresholdGain = parts.getOrElse(3) { 80 },
-            thresholdMin = parts.getOrElse(4) { 1000 }
+            minStd = parts.getOrElse(0) { -1 },
+            maxStd = parts.getOrElse(1) { -1 },
+            offsetStd = parts.getOrElse(2) { -1 },
+            thresholdGain = parts.getOrElse(3) { -1 },
+            thresholdMin = parts.getOrElse(4) { -1 }
         )
     }
 
