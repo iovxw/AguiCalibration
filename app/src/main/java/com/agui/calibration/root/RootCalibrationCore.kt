@@ -168,6 +168,11 @@ object RootCalibrationCore {
     private fun alspsApplyDefaultThresholds(minValue: Int?): Pair<String, Int> {
         val daemon = getDaemon() ?: return "ERROR service_unavailable" to 3
         val standard = readAlspsStandard()
+        if (standard.minStd <= 0 || standard.maxStd <= 0 || standard.offsetStd < 0 ||
+            standard.thresholdGain <= 0 || standard.thresholdMin < 0
+        ) {
+            return "ERROR invalid_standard:${standard.raw}" to 5
+        }
         val baseMin = minValue ?: daemon.SendMessageToIoctl(TYPE_ALSPS_IOCTL, 7, 0, 0)
         if (baseMin < 0) {
             return "ERROR invalid_min_value" to 5
